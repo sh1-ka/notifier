@@ -12,8 +12,8 @@ class User(Base):
     __tablename__ = "user"
 
     id : Mapped[int] = mapped_column(primary_key=True)
-    userid : Mapped[int] = mapped_column()
-    msg_id : Mapped[int | None] = mapped_column(nullable=True)
+    userid : Mapped[String] = mapped_column(String())
+    msg_id : Mapped[String | None] = mapped_column(nullable=True)
 
     tasks : Mapped[List["Task"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
@@ -22,7 +22,7 @@ class Task(Base):
     id : Mapped[int] = mapped_column(primary_key=True)
     title : Mapped[String] = mapped_column(String())
     zid : Mapped[String] = mapped_column(String())
-    userid : Mapped[int] = mapped_column(ForeignKey("user.id"))
+    userid : Mapped[String] = mapped_column(ForeignKey("user.id"))
     user : Mapped[User] = relationship(back_populates="tasks")
 
 
@@ -32,7 +32,7 @@ class DB():
         self.engine = create_async_engine(self.DATABASE)
         self.session = async_sessionmaker(self.engine, expire_on_commit=False)
 
-    async def check_user(self, id : int):
+    async def check_user(self, id : str):
         async with self.session() as session:
             stmt = select(User).where(User.userid == id)
             usr = await session.scalar(stmt)
@@ -40,14 +40,14 @@ class DB():
                 return False
             return True
 
-    async def add_user(self, id : int):
+    async def add_user(self, id : str):
         async with self.session() as session:
             cur_user = User()
             cur_user.userid = id
             session.add(cur_user)
             await session.commit()
 
-    async def add_task_for_user(self, userid : int, titl : str, idd : str):
+    async def add_task_for_user(self, userid : str, titl : str, idd : str):
         async with self.session() as session:
             stmt = select(User).where(User.userid == userid).options(selectinload(User.tasks))
             usr = await session.scalar(stmt)
@@ -63,20 +63,20 @@ class DB():
             print("Таска удалена")
     
     
-    async def update_msg_id(self, id : int, nw_msg_id : int):
+    async def update_msg_id(self, id : str, nw_msg_id : str):
         async with self.session() as session:
             stmt = select(User).where(User.userid == id)
             usr = await session.scalar(stmt)
             usr.msg_id = nw_msg_id
             await session.commit()
 
-    async def get_msg_id(self, id : int):
+    async def get_msg_id(self, id : str):
         async with self.session() as session:
             stmt = select(User).where(User.userid == id)
             usr = await session.scalar(stmt)
             return usr.msg_id
 
-    async def get_list_of_tasks(self, userid : int):
+    async def get_list_of_tasks(self, userid : str):
         async with self.session() as session:
             stmt = select(User).where(User.userid == userid).options(selectinload(User.tasks))
             my_usr = await session.scalar(stmt)

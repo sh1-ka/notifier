@@ -25,17 +25,17 @@ async def get_keyboard(userid : int):
     keys = []
     for titl, cdat in zzs:
         keys.append([InlineKeyboardButton(text=titl, callback_data=cdat)])
+    keys.append([InlineKeyboardButton(text="Добавить задачу", callback_data="add_task")])
     return keys
 
 async def start(update : Update, context: ContextTypes.DEFAULT_TYPE):
     if not await cdb.check_user(update.effective_user.id):
         await cdb.add_user(update.effective_user.id)
-        await cdb.add_task_for_user(update.effective_user.id, "Добавить задачу", "add_task")
 
     mark = InlineKeyboardMarkup(await get_keyboard(update.effective_user.id))
     msg = await update.message.reply_text("Дароу, я кароч сохраняю твои дела и все в целом", reply_markup=mark)
     # context.user_data["msg_id"] = msg.id
-    await cdb.update_msg_id(update.effective_user.id, msg.id)
+    await cdb.update_msg_id(update.effective_user.id, str(msg.message_id))
 
 async def add_task(update : Update, context : ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -50,7 +50,7 @@ async def get_nae(update : Update, context : ContextTypes.DEFAULT_TYPE):
 
     msg = await update.message.reply_text("Ваши задачи:", reply_markup=InlineKeyboardMarkup(await get_keyboard(update.effective_user.id)))
     # context.user_data["msg_id"] = msg.id
-    await cdb.update_msg_id(update.effective_user.id, msg.id)
+    await cdb.update_msg_id(update.effective_user.id, str(msg.message_id))
     return ConversationHandler.END
 
 async def remove_task(update : Update, context : ContextTypes.DEFAULT_TYPE):
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     app.add_handler(ConversationHandler(
         entry_points=[CallbackQueryHandler(add_task, pattern="^" + "add_task" + "$")],
         states={
-            ADDTASK : [MessageHandler(filters.ALL, get_nae)]
+            ADDTASK : [MessageHandler(filters.TEXT & ~filters.COMMAND, get_nae)]
         },
         fallbacks=[]
     ))
